@@ -93,8 +93,8 @@ run(Parent, N, PubSub, Opts) ->
 connect(Parent, N, PubSub, Opts) ->
     process_flag(trap_exit, true),
     random:seed(os:timestamp()),
-    ClientId = client_id(PubSub, N, Opts),
-    MqttOpts = [{client_id, ClientId} | mqtt_opts(Opts)],
+    ClientId = client_id(proplists:get_value(username, Opts), N, v2),
+    MqttOpts = [ssl, {client_id, ClientId} | mqtt_opts(Opts)],
     TcpOpts  = tcp_opts(Opts),
     AllOpts  = [{seq, N}, {client_id, ClientId} | Opts],
 	case emqttc:start_link(MqttOpts, TcpOpts) of
@@ -164,6 +164,9 @@ tcp_opts([{ifaddr, IfAddr} | Opts], Acc) ->
 tcp_opts([_|Opts], Acc) ->
     tcp_opts(Opts, Acc).
 
+client_id(UsrId, N, v2) ->
+    ClientId = "7/00000000/"++integer_to_list(N)++"/"++UsrId,
+    list_to_binary(ClientId);
 client_id(PubSub, N, Opts) ->
     Prefix =
     case proplists:get_value(ifaddr, Opts) of
